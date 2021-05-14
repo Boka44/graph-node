@@ -162,6 +162,8 @@ fn asc_type_derive_enum(item_enum: ItemEnum) -> TokenStream {
     let variant_discriminant2 = variant_discriminant.clone();
 
     TokenStream::from(quote! {
+        impl#impl_generics AscIndexId for #enum_name#ty_generics #where_clause {}
+
         impl#impl_generics AscType for #enum_name#ty_generics #where_clause {
             fn to_asc_bytes(&self) -> Result<Vec<u8>, DeterministicHostError> {
                 let discriminant: u32 = match self {
