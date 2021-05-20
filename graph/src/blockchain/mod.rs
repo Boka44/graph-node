@@ -19,6 +19,7 @@ use crate::{
 };
 use anyhow::Error;
 use async_trait::async_trait;
+use serde::de::DeserializeOwned;
 use slog;
 use slog::Logger;
 use std::collections::HashMap;
@@ -50,9 +51,12 @@ pub trait Block: Send + Sync {
     }
 }
 
-pub trait Blockchain: Sized + Send + Sync + 'static {
+// This is only `Debug` because some tests require that
+pub trait Blockchain: Debug + Sized + Send + Sync + 'static {
     type Block: Block;
     type DataSource: DataSource<C = Self>;
+    type UnresolvedDataSource: UnresolvedDataSource<Self>;
+
     type DataSourceTemplate;
     type Manifest: Manifest<Self>;
 
@@ -194,6 +198,17 @@ pub trait DataSource: 'static + Sized + Send + Sync {
     ) -> Result<Option<<Self::C as Blockchain>::MappingTrigger>, Error>;
 
     fn is_duplicate_of(&self, other: &Self) -> bool;
+}
+
+#[async_trait]
+pub trait UnresolvedDataSource<C: Blockchain>:
+    'static + Sized + Send + Sync + DeserializeOwned
+{
+    async fn resolve(
+        self,
+        resolver: &impl LinkResolver,
+        logger: &Logger,
+    ) -> Result<C::DataSource, anyhow::Error>;
 }
 
 #[async_trait]
